@@ -1,2 +1,2 @@
 # FinalYearProject-IntelliHire
-IntelliHire : AI-Powered Virtual Interviewer.
+SmartHire : AI-Powered Virtual Interviewer.
