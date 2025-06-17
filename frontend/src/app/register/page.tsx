@@ -48,7 +48,7 @@ const Registration = () => {
         <button className="mt-6 w-full bg-[#454545] text-white font-bold py-2 rounded-xl hover:bg-[#3d3d3d] transition">
           Registration
         </button>
-        <p className='mt-3 text-left'>Already have an account ?  <Link href="/login" className='font-bold text-[#3d3d3d]'>Login</Link> </p> 
+        <p className='mt-3 text-left mb-5'>Already have an account ?  <Link href="/login" className='font-bold text-[#3d3d3d]'>Login</Link> </p> 
       </div>
     </div>
   );

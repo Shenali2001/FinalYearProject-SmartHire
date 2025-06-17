@@ -22,7 +22,7 @@ const Login = () => {
             <label className="block font-semibold mb-1"> Your Email :</label>
             <input
               type="text"
-              placeholder="Your Email "
+              placeholder="Your Email"
               className="w-full px-4 py-2 border rounded-xl bg-gray-200 placeholder-gray-500"
             />
           </div>
@@ -39,7 +39,7 @@ const Login = () => {
         <button className="mt-6 w-full bg-[#454545] text-white font-bold py-2 rounded-xl hover:bg-[#3d3d3d] transition">
           Login
         </button>
-        <p className='mt-3 text-left'>Don't have an account ?  <Link href="/register" className='font-bold text-[#3d3d3d]'>Registration</Link></p>
+        <p className='mt-3 text-left mb-5'>Don't have an account ?  <Link href="/register" className='font-bold text-[#3d3d3d]'>Registration</Link></p>
       </div>
     </div>
   );
