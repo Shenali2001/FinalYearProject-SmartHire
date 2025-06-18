@@ -12,41 +12,43 @@ const Navbar = () => {
   });
 
   return (
-    <nav className="bg-white shadow-md px-4 py-3 flex items-center justify-between">
+    <nav className="bg-[#3d3d3d] shadow-md px-10 py-1 flex items-center justify-between">
       {/* Logo */}
-      <div className="flex items-center gap-2">
-        <Image src="/logo.png" alt="Logo" width={40} height={40} />
-        <span className="text-xl font-bold text-gray-800">MyApp</span>
+      <div className="flex items-center gap-2 ">
+        <Image src="/images/CommonImages/logoWhite.png" alt="Logo" width={100} height={100} />
+        {/* <span className="text-xl font-bold text-gray-800">MyApp</span> */}
       </div>
 
       {/* Navigation Links */}
-      <ul className="hidden md:flex gap-6 text-gray-700 font-medium">
+      <ul className="hidden md:flex gap-38 text-[#b0b0b0] font-medium text-lg">
         <li>
-          <Link href="/" className="hover:text-blue-600">Home</Link>
+          <Link href="/" className="hover:text-[#d1d1d1]">Home</Link>
         </li>
         <li>
-          <Link href="/about" className="hover:text-blue-600">About Us</Link>
+          <Link href="/about" className="hover:text-[#d1d1d1]">About Us</Link>
         </li>
         <li>
-          <Link href="/contact" className="hover:text-blue-600">Contact</Link>
+          <Link href="/contact" className="hover:text-[#d1d1d1]">Contact</Link>
+        </li>
+      </ul>
+      <ul className="hidden md:flex gap-18 text-[#b0b0b0] font-medium text-lg">  
+        <li>
+          <Link href="/login" className="hover:text-[#d1d1d1]">Login</Link>
         </li>
         <li>
-          <Link href="/login" className="hover:text-blue-600">Login</Link>
-        </li>
-        <li>
-          <Link href="/register" className="hover:text-blue-600">Register</Link>
+          <Link href="/register" className="hover:text-[#d1d1d1]">Register</Link>
         </li>
       </ul>
 
       {/* User Icon & Name */}
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         {user.loggedIn && (
           <>
-            <FaUserCircle className="text-2xl text-gray-600" />
-            <span className="text-gray-800 font-medium hidden sm:inline">{user.name}</span>
+            <FaUserCircle className="text-2xl text-[#d1d1d1]" />
+            <span className="text-[#e7e7e7] font-medium hidden sm:inline">{user.name}</span>
           </>
         )}
-      </div>
+      </div> */}
     </nav>
   );
 };
