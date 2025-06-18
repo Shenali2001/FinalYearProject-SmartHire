@@ -3,8 +3,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import Image from "next/image";
+import { usePathname } from "next/navigation"; 
 
 const Navbar = () => {
+  const pathname = usePathname();
+  if (pathname === "/login" || pathname === "/register") return null;
+
   // Example user data (replace with auth state if available)
   const [user, setUser] = useState({
     name: "Shenali",
@@ -14,8 +18,8 @@ const Navbar = () => {
   return (
     <nav className="bg-[#3d3d3d] shadow-md px-10 py-1 flex items-center justify-between">
       {/* Logo */}
-      <div className="flex items-center gap-2 ">
-        <Image src="/images/CommonImages/logoWhite.png" alt="Logo" width={100} height={100} />
+      <div className="flex items-center gap-2 p-3 ">
+        <Image src="/images/CommonImages/logoWhite.png" alt="Logo" width={120} height={120} />
         {/* <span className="text-xl font-bold text-gray-800">MyApp</span> */}
       </div>
 
