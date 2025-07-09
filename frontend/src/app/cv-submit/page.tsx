@@ -1,12 +1,10 @@
 'use client';
 import Image from 'next/image';
-import SlideShow1 from '@/components/HomePageSlideShow';
+import React, { useEffect, useState } from 'react';
 import { MdOutlineCloudUpload } from 'react-icons/md';
 import { FaRocket } from 'react-icons/fa';
-import React, { useEffect, useState } from 'react';
 
-// SlideShow Component (Renamed CvSubmit from previous response)
-const SlideShow: React.FC = () => {
+const CvSubmit: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -45,18 +43,20 @@ const SlideShow: React.FC = () => {
   useEffect(() => {
     const slider = document.getElementById('slider') as HTMLDivElement | null;
     let scrollAmount = 0;
-    const scrollStep = 1;
-    const scrollInterval = 20;
+    const scrollStep = 1; // Pixels to scroll per frame
+    const scrollInterval = 20; // Milliseconds between scroll steps
 
     const scroll = () => {
       if (slider) {
-        const slideWidth = slider.clientWidth;
+        const slideWidth = slider.clientWidth; // Use clientWidth for dynamic slide width
         scrollAmount += scrollStep;
         slider.scrollLeft = scrollAmount;
 
+        // Update active slide based on scroll position
         const currentSlide = Math.round(slider.scrollLeft / slideWidth);
         setActiveSlide(currentSlide);
 
+        // Reset to start when reaching the end
         if (scrollAmount >= slider.scrollWidth - slider.clientWidth) {
           scrollAmount = 0;
           slider.scrollLeft = 0;
@@ -66,7 +66,8 @@ const SlideShow: React.FC = () => {
     };
 
     const intervalId = setInterval(scroll, scrollInterval);
-    return () => clearInterval(intervalId);
+
+    return () => clearInterval(intervalId); // Cleanup on component unmount
   }, []);
 
   const boxes = [
@@ -75,11 +76,12 @@ const SlideShow: React.FC = () => {
     'Mobile', 'QA',
   ];
 
+  // Dynamically group boxes based on screen size
   const getItemsPerSlide = () => {
-    if (typeof window === 'undefined') return 8;
-    if (window.innerWidth < 640) return 4;
-    if (window.innerWidth < 1024) return 6;
-    return 8;
+    if (typeof window === 'undefined') return 8; // Default for SSR
+    if (window.innerWidth < 640) return 4; // Mobile: 2x2 grid
+    if (window.innerWidth < 1024) return 6; // Tablet: 3x2 grid
+    return 8; // Desktop: 4x2 grid
   };
 
   const [itemsPerSlide, setItemsPerSlide] = useState(getItemsPerSlide());
@@ -109,6 +111,7 @@ const SlideShow: React.FC = () => {
         }
       `}</style>
 
+      {/* CV Template Section */}
       <div className="mb-6">
         <div className="text-center mb-6">
           <p className="text-3xl sm:text-4xl md:text-5xl font-medium">
@@ -168,6 +171,7 @@ const SlideShow: React.FC = () => {
         </div>
       </div>
 
+      {/* Job Type Slider */}
       <div>
         <div className="px-4 sm:px-8 mt-4 mb-4">
           <p className="text-2xl sm:text-3xl font-semibold">Select Your Job Type</p>
@@ -207,6 +211,7 @@ const SlideShow: React.FC = () => {
         </div>
       </div>
 
+      {/* Job Position Dropdown */}
       <div>
         <div className="px-4 sm:px-8 mt-4 mb-4">
           <p className="text-2xl sm:text-3xl font-semibold">Select Your Positions</p>
@@ -225,6 +230,7 @@ const SlideShow: React.FC = () => {
         </div>
       </div>
 
+      {/* CV Upload Section */}
       <div className="px-4 sm:px-8 mt-6 mb-6">
         <p className="text-2xl sm:text-3xl font-semibold">Upload Your CV</p>
         <div className="max-w-5xl mx-auto mt-6">
@@ -265,6 +271,7 @@ const SlideShow: React.FC = () => {
         </div>
       </div>
 
+      {/* Call to Action */}
       <div className="bg-black rounded-tl-[50px] sm:rounded-tl-[100px] rounded-br-[50px] sm:rounded-br-[100px]">
         <div className="text-white text-center p-6 sm:p-10">
           <p className="text-xl sm:text-2xl md:text-3xl">
@@ -284,60 +291,4 @@ const SlideShow: React.FC = () => {
   );
 };
 
-// Home Component
-export default function Home() {
-  return (
-    <div className="bg-white min-h-screen p-4 sm:p-6 md:p-8">
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
-        {/* Left (Image) */}
-        <div className="w-full md:w-1/2">
-          <div className="mt-8 sm:mt-10 md:mt-12 px-4 sm:px-8 md:px-12">
-            <Image
-              src="/images/CommonImages/homepage2.jpg"
-              alt="Hero Image"
-              width={500}
-              height={200}
-              className="rounded-3xl object-cover w-full h-auto max-h-64 sm:max-h-80 md:max-h-96"
-            />
-          </div>
-        </div>
-
-        {/* Right (Text + Button + Logo) */}
-        <div className="w-full md:w-1/2">
-          <div className="p-4 sm:p-5 md:p-6">
-            <div className="flex flex-col sm:flex-row items-center mt-4 sm:mt-6">
-              <div className="text-3xl sm:text-4xl md:text-5xl font-medium text-center sm:text-left">
-                Welcome to
-              </div>
-              <div className="mt-4 sm:mt-0 sm:ml-4">
-                <Image
-                  src="/images/CommonImages/logoBlack.png"
-                  alt="Logo"
-                  width={120}
-                  height={120}
-                  className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 object-contain"
-                />
-              </div>
-            </div>
-            <p className="text-xl sm:text-2xl md:text-3xl text-center sm:text-left text-gray-800 leading-normal mt-4 sm:mt-6">
-              Discover amazing destinations and experiences curated just for you.
-            </p>
-            <div className="flex flex-col sm:flex-row mt-6 sm:mt-8 md:mt-10 gap-4 sm:gap-6">
-              <button className="px-6 py-2 sm:px-8 sm:py-3 bg-black text-white rounded-full text-base sm:text-lg hover:bg-gray-900 transition w-full sm:w-auto">
-                Sign In as Candidate
-              </button>
-              <button className="px-6 py-2 sm:px-8 sm:py-3 bg-black text-white rounded-full text-base sm:text-lg hover:bg-gray-900 transition w-full sm:w-auto">
-                Sign Up as Candidate
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SlideShow Section */}
-      <div className="mt-6 sm:mt-8 md:mt-10">
-        <SlideShow1 />
-      </div>
-    </div>
-  );
-}
+export default CvSubmit;
