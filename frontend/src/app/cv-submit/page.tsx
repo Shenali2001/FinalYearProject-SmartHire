@@ -3,6 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { MdOutlineCloudUpload } from 'react-icons/md';
 import { FaRocket } from 'react-icons/fa';
 import CvTemplateSections from '../components/CvTemplateSections';
+import { ref, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import { storage } from "../utils/firebase";
+
 
 interface JobType {
   name: string;
@@ -15,6 +18,12 @@ interface JobPosition {
   type_id: number;
 }
 
+interface UploadCv {
+   type_id: number;
+   position_id: number;
+   cv : string;
+}
+
 const CvSubmit: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -22,6 +31,9 @@ const CvSubmit: React.FC = () => {
   const [jobType, setJobType] = useState<JobType[]>([]);
   const [selectedJobType, setSelectedJobType] = useState<number | null>(null);
   const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,7 +96,7 @@ const CvSubmit: React.FC = () => {
 
   
   const BASE_URL = "http://127.0.0.1:8000";
-  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaGVuYWxpMTIzQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImV4cCI6MTc1MjYyMzI5NX0.jr0nEx2TFpJ9yiByRsejicHcg5SSlqQ1p0pwlfqyfy0";
+  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaGVuYWxpMTIzQGdtYWlsLmNvbSIsInJvbGUiOiJjYW5kaWRhdGUiLCJleHAiOjE3NTI4NjI0Njh9.IEw34NwkuEKQ67nvDd_CrWYvUbARJdblvUEJ16JCs98";
 
   // fetch job-Type
   useEffect(() => {
@@ -168,10 +180,75 @@ useEffect(() => {
   fetchJobPositions();
 }, [selectedJobType]);
 
+// upload cv
+const handleUpload = async () => {
+  if (!selectedFile || !selectedJobType || !selectedPosition) {
+    alert("Please select a job type, position, and upload a CV.");
+    return;
+  }
+
+  try {
+    setUploading(true);
+    const fileName = `cv/${Date.now()}_${selectedFile.name}`;
+    const storageRef = ref(storage, fileName);
+
+    const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(progress);
+      },
+      (error) => {
+        console.error("Firebase upload error:", error);
+        setUploading(false);
+        alert("Failed to upload CV.");
+      },
+      async () => {
+        // ✅ Get the public download URL
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        console.log("Download URL:", downloadURL);
+
+        // Send this to your API
+        const payload = {
+          cv_url: downloadURL,
+          job_type_id: selectedJobType,
+          job_position_id: selectedPosition,
+        };
+
+        const response = await fetch(`${BASE_URL}/cv/cv/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error! Status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        console.log("API response:", responseData);
+        alert("CV uploaded successfully!");
+        setSelectedFile(null);
+        setUploadProgress(0);
+      }
+    );
+  } catch (error) {
+    console.error("Error during upload:", error);
+    alert("Something went wrong during upload.");
+  } finally {
+    setUploading(false);
+  }
+};
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
-      <style jsx>{`
+      <style>{`
         .no-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -233,8 +310,9 @@ useEffect(() => {
         </div>
         <div className="px-4 sm:px-8 py-6 bg-[#f6f6f6] rounded-xl shadow-md max-w-6xl mx-auto">
           <div className="flex flex-col">
-            <select
+          <select
               className="w-full p-3 border border-gray-300 rounded-lg bg-white text-black hover:bg-gray-300 cursor-pointer text-sm sm:text-base"
+              onChange={(e) => setSelectedPosition(Number(e.target.value))}
             >
               <option value="">Select a Position</option>
               {jobPositions.map((position) => (
@@ -243,6 +321,7 @@ useEffect(() => {
                 </option>
               ))}
             </select>
+
           </div>
         </div>
       </div>
@@ -252,7 +331,7 @@ useEffect(() => {
         <div className="max-w-5xl mx-auto mt-6">
           <div
             className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-4 transition-colors duration-300 ${
-              dragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-400'
+              dragActive ? "border-blue-400 bg-blue-50" : "border-gray-400"
             }`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -283,6 +362,27 @@ useEffect(() => {
                 Selected file: {selectedFile.name}
               </p>
             )}
+            {uploading && (
+              <div className="w-full bg-gray-200 rounded-full mt-4">
+                <div
+                  className="bg-blue-600 text-xs leading-none py-1 text-center text-white rounded-full"
+                  style={{ width: `${uploadProgress}%` }}
+                >
+                  {Math.round(uploadProgress)}%
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={handleUpload}
+              disabled={uploading}
+              className={`px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${
+                uploading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {uploading ? "Uploading..." : "Submit CV"}
+            </button>
           </div>
         </div>
       </div>
