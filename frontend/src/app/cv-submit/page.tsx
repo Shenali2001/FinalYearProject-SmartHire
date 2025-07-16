@@ -9,10 +9,10 @@ interface JobType {
   id: number;
 }
 
-interface jobDetails {
-  jobPosition: string;
-  jobType: string;
-  cv: string;
+interface JobPosition {
+  id: number;
+  name: string;
+  type_id: number;
 }
 
 const CvSubmit: React.FC = () => {
@@ -20,6 +20,8 @@ const CvSubmit: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [jobType, setJobType] = useState<JobType[]>([]);
+  const [selectedJobType, setSelectedJobType] = useState<number | null>(null);
+  const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -80,6 +82,7 @@ const CvSubmit: React.FC = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  
   const BASE_URL = "http://127.0.0.1:8000";
   const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaGVuYWxpMTIzQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImV4cCI6MTc1MjYyMzI5NX0.jr0nEx2TFpJ9yiByRsejicHcg5SSlqQ1p0pwlfqyfy0";
 
@@ -131,6 +134,41 @@ const CvSubmit: React.FC = () => {
     slides.push(jobType.slice(i, i + itemsPerSlide));
   }
 
+  const handleJobTypeClick = (jobTypeId: number) => {
+  setSelectedJobType(jobTypeId);
+};
+
+// Fetch job-Positions
+useEffect(() => {
+  const fetchJobPositions = async () => {
+    if (selectedJobType === null) {
+      setJobPositions([]);
+      return;
+    }
+    try {
+      const response = await fetch(`${BASE_URL}/jobs/jobs/types/${selectedJobType}/positions`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: JobPosition[] = await response.json();
+      setJobPositions(data);
+      console.log('Job Positions:', data);
+    } catch (error) {
+      console.error('Failed to fetch job positions:', error);
+      setJobPositions([]);
+    }
+  };
+  fetchJobPositions();
+}, [selectedJobType]);
+
+
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <style jsx>{`
@@ -165,8 +203,11 @@ const CvSubmit: React.FC = () => {
             >
               {slide.map((label, index) => (
                 <div
-                  key={`${slideIndex}-${index}`}
-                  className="bg-[#5d5d5d] text-white rounded-2xl text-center text-lg sm:text-xl py-6 sm:py-8 snap-center"
+                 key={`${slideIndex}-${index}`}
+                  className={`bg-[#5d5d5d] text-white rounded-2xl text-center text-lg sm:text-xl py-6 sm:py-8 snap-center cursor-pointer hover:bg-[#4a4a4a] ${
+                    selectedJobType === label.id ? 'bg-black border-2 border-blue-400' : ''
+                  }`}
+                  onClick={() => handleJobTypeClick(label.id)}
                 >
                   {label.name || 'Unknown Job Type'}
                 </div>
@@ -195,10 +236,12 @@ const CvSubmit: React.FC = () => {
             <select
               className="w-full p-3 border border-gray-300 rounded-lg bg-white text-black hover:bg-gray-300 cursor-pointer text-sm sm:text-base"
             >
-              <option value="">Positions</option>
-              <option value="intern">Intern</option>
-              <option value="associate-se">Associate SE</option>
-              <option value="senior-se">Senior SE</option>
+              <option value="">Select a Position</option>
+              {jobPositions.map((position) => (
+                <option key={position.id} value={position.id}>
+                  {position.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
