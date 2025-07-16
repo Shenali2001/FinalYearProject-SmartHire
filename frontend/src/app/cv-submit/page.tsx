@@ -1,13 +1,25 @@
 'use client';
-import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { MdOutlineCloudUpload } from 'react-icons/md';
 import { FaRocket } from 'react-icons/fa';
+import CvTemplateSections from '../components/CvTemplateSections';
+
+interface JobType {
+  name: string;
+  id: number;
+}
+
+interface jobDetails {
+  jobPosition: string;
+  jobType: string;
+  cv: string;
+}
 
 const CvSubmit: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [jobType, setJobType] = useState<JobType[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,20 +55,18 @@ const CvSubmit: React.FC = () => {
   useEffect(() => {
     const slider = document.getElementById('slider') as HTMLDivElement | null;
     let scrollAmount = 0;
-    const scrollStep = 1; // Pixels to scroll per frame
-    const scrollInterval = 20; // Milliseconds between scroll steps
+    const scrollStep = 1;
+    const scrollInterval = 20;
 
     const scroll = () => {
       if (slider) {
-        const slideWidth = slider.clientWidth; // Use clientWidth for dynamic slide width
+        const slideWidth = slider.clientWidth;
         scrollAmount += scrollStep;
         slider.scrollLeft = scrollAmount;
 
-        // Update active slide based on scroll position
         const currentSlide = Math.round(slider.scrollLeft / slideWidth);
         setActiveSlide(currentSlide);
 
-        // Reset to start when reaching the end
         if (scrollAmount >= slider.scrollWidth - slider.clientWidth) {
           scrollAmount = 0;
           slider.scrollLeft = 0;
@@ -67,21 +77,43 @@ const CvSubmit: React.FC = () => {
 
     const intervalId = setInterval(scroll, scrollInterval);
 
-    return () => clearInterval(intervalId); // Cleanup on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
-  const boxes = [
-    'Frontend', 'UI / UX', 'Backend', 'DevOps', 'Fullstack', 'Mobile', 'QA', 'AI',
-    'ML', 'Game Dev', 'Project Mgr', 'Security', 'Frontend', 'UI / UX', 'Backend', 'DevOps', 'Fullstack',
-    'Mobile', 'QA',
-  ];
+  const BASE_URL = "http://127.0.0.1:8000";
+  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaGVuYWxpMTIzQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImV4cCI6MTc1MjYyMzI5NX0.jr0nEx2TFpJ9yiByRsejicHcg5SSlqQ1p0pwlfqyfy0";
 
-  // Dynamically group boxes based on screen size
+  // fetch job-Type
+  useEffect(() => {
+    const fetchJobType = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/jobs/jobs/types`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data: JobType[] = await response.json();
+        setJobType(data);
+        console.log('Job Types:', data);
+      } catch (error) {
+        console.error('Failed to fetch job positions:', error);
+      }
+    };
+    fetchJobType();
+  }, []);
+
+
   const getItemsPerSlide = () => {
-    if (typeof window === 'undefined') return 8; // Default for SSR
-    if (window.innerWidth < 640) return 4; // Mobile: 2x2 grid
-    if (window.innerWidth < 1024) return 6; // Tablet: 3x2 grid
-    return 8; // Desktop: 4x2 grid
+    if (typeof window === 'undefined') return 8;
+    if (window.innerWidth < 640) return 4;
+    if (window.innerWidth < 1024) return 6;
+    return 8;
   };
 
   const [itemsPerSlide, setItemsPerSlide] = useState(getItemsPerSlide());
@@ -95,8 +127,8 @@ const CvSubmit: React.FC = () => {
   }, []);
 
   const slides = [];
-  for (let i = 0; i < boxes.length; i += itemsPerSlide) {
-    slides.push(boxes.slice(i, i + itemsPerSlide));
+  for (let i = 0; i < jobType.length; i += itemsPerSlide) {
+    slides.push(jobType.slice(i, i + itemsPerSlide));
   }
 
   return (
@@ -111,67 +143,10 @@ const CvSubmit: React.FC = () => {
         }
       `}</style>
 
-      {/* CV Template Section */}
-      <div className="mb-6">
-        <div className="text-center mb-6">
-          <p className="text-3xl sm:text-4xl md:text-5xl font-medium">
-            Are You Ready for the Interview?
-          </p>
-        </div>
-        <div className="bg-[#f6f6f6] rounded-tl-[100px] sm:rounded-tl-[200px] md:rounded-tl-[300px] rounded-tr-[30px] sm:rounded-tr-[40px] rounded-b-[30px] sm:rounded-b-[40px] p-4 sm:p-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="lg:basis-2/5 flex justify-center">
-              <div className="border-2 p-0.5 bg-black max-w-full">
-                <Image
-                  src="/images/CommonImages/Sample CV Template.jpg"
-                  alt="Sample CV"
-                  width={400}
-                  height={350}
-                  className="w-full h-auto object-contain"
-                />
-              </div>
-            </div>
-            <div className="lg:basis-3/5">
-              <div className="text-left p-4 sm:p-6">
-                <div className="bg-black">
-                  <h2 className="text-xl sm:text-2xl font-bold text-white text-center py-2">
-                    CV – Key Information
-                  </h2>
-                </div>
-                <ul className="list-disc pl-6 space-y-2 text-gray-700 text-sm sm:text-base">
-                  <li>Uploading your CV is the first step toward using our AI interview platform effectively.</li>
-                  <li>Your CV helps our system understand your background, skills, and goals.</li>
-                  <li>This enables personalized mock interviews, skill-based questions, and accurate feedback.</li>
-                  <li>Make sure your CV includes:
-                    <ul className="list-disc pl-6 space-y-1">
-                      <li>Full name and contact details</li>
-                      <li>A brief professional summary</li>
-                      <li>Education background</li>
-                      <li>Technical or soft skills</li>
-                      <li>Projects or achievements</li>
-                      <li>Work experience or internships</li>
-                    </ul>
-                  </li>
-                  <li>Refer to the sample CV provided above for a clear format.</li>
-                  <li>Use keywords relevant to your field (e.g., “React”, “Spring Boot” for developers).</li>
-                  <li>Keep the content updated with your latest experience and accomplishments.</li>
-                  <li>Accepted file formats: PDF, DOCX, JPG, or PNG.</li>
-                  <li>Your uploaded CV will remain secure and private.</li>
-                  <li>It will only be used to enhance your interview preparation experience.</li>
-                  <li>A well-structured CV ensures better results and more relevant AI guidance.</li>
-                </ul>
-              </div>
-              <div className="flex justify-center mb-6">
-                <button className="px-6 py-2 sm:px-8 sm:py-3 bg-black text-white rounded-2xl text-base sm:text-lg">
-                  Download Sample CV
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div>
+        <CvTemplateSections />
       </div>
 
-      {/* Job Type Slider */}
       <div>
         <div className="px-4 sm:px-8 mt-4 mb-4">
           <p className="text-2xl sm:text-3xl font-semibold">Select Your Job Type</p>
@@ -193,7 +168,7 @@ const CvSubmit: React.FC = () => {
                   key={`${slideIndex}-${index}`}
                   className="bg-[#5d5d5d] text-white rounded-2xl text-center text-lg sm:text-xl py-6 sm:py-8 snap-center"
                 >
-                  {label}
+                  {label.name || 'Unknown Job Type'}
                 </div>
               ))}
             </div>
@@ -211,7 +186,6 @@ const CvSubmit: React.FC = () => {
         </div>
       </div>
 
-      {/* Job Position Dropdown */}
       <div>
         <div className="px-4 sm:px-8 mt-4 mb-4">
           <p className="text-2xl sm:text-3xl font-semibold">Select Your Positions</p>
@@ -230,7 +204,6 @@ const CvSubmit: React.FC = () => {
         </div>
       </div>
 
-      {/* CV Upload Section */}
       <div className="px-4 sm:px-8 mt-6 mb-6">
         <p className="text-2xl sm:text-3xl font-semibold">Upload Your CV</p>
         <div className="max-w-5xl mx-auto mt-6">
@@ -271,7 +244,6 @@ const CvSubmit: React.FC = () => {
         </div>
       </div>
 
-      {/* Call to Action */}
       <div className="bg-black rounded-tl-[50px] sm:rounded-tl-[100px] rounded-br-[50px] sm:rounded-br-[100px]">
         <div className="text-white text-center p-6 sm:p-10">
           <p className="text-xl sm:text-2xl md:text-3xl">
