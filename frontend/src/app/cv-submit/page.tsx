@@ -4,10 +4,17 @@ import React, { useEffect, useState } from 'react';
 import { MdOutlineCloudUpload } from 'react-icons/md';
 import { FaRocket } from 'react-icons/fa';
 
+interface jobDetails {
+  jobPosition : string;
+  jobType : string;
+  cv : string
+}
+
 const CvSubmit: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [jobType, setJobType] = useState<string[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,11 +77,37 @@ const CvSubmit: React.FC = () => {
     return () => clearInterval(intervalId); // Cleanup on component unmount
   }, []);
 
-  const boxes = [
-    'Frontend', 'UI / UX', 'Backend', 'DevOps', 'Fullstack', 'Mobile', 'QA', 'AI',
-    'ML', 'Game Dev', 'Project Mgr', 'Security', 'Frontend', 'UI / UX', 'Backend', 'DevOps', 'Fullstack',
-    'Mobile', 'QA',
-  ];
+  // Fetch All Job-Positins
+
+  const BASE_URL = "http://127.0.0.1:8000"
+  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaGVuYWxpMTIzQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImV4cCI6MTc1MjYyMzI5NX0.jr0nEx2TFpJ9yiByRsejicHcg5SSlqQ1p0pwlfqyfy0"
+  useEffect ( () => {
+      const fetchPositions = async () => {
+        try {
+          const response = await fetch (`${BASE_URL}/jobs/jobs/types`,{
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+               Authorization: `Bearer  ${TOKEN}`,
+               
+            },
+            
+          });
+
+          if (!response.ok){
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          setJobType(data);
+          console.log('BASE_URL:',BASE_URL);
+          console.log('TOKEN:', TOKEN);
+
+        } catch (error) {
+           console.error('Failed to fetch job positions:', error);
+        }
+      };
+      fetchPositions(); 
+  }, [])
 
   // Dynamically group boxes based on screen size
   const getItemsPerSlide = () => {
@@ -95,8 +128,8 @@ const CvSubmit: React.FC = () => {
   }, []);
 
   const slides = [];
-  for (let i = 0; i < boxes.length; i += itemsPerSlide) {
-    slides.push(boxes.slice(i, i + itemsPerSlide));
+  for (let i = 0; i < jobType.length; i += itemsPerSlide) {
+    slides.push(jobType.slice(i, i + itemsPerSlide));
   }
 
   return (
