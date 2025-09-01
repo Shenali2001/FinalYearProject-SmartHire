@@ -1,343 +1,326 @@
-'use client';
-import Image from 'next/image';
-import SlideShow1 from '@/components/HomePageSlideShow';
-import { MdOutlineCloudUpload } from 'react-icons/md';
-import { FaRocket } from 'react-icons/fa';
-import React, { useEffect, useState } from 'react';
+'use client'
 
-// SlideShow Component (Renamed CvSubmit from previous response)
-const SlideShow: React.FC = () => {
-  const [activeSlide, setActiveSlide] = useState(0);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [dragActive, setDragActive] = useState(false);
+import Image from 'next/image'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
+import {
+  ArrowRight,
+  Briefcase,
+  Building2,
+  CheckCircle2,
+  Clock,
+  Quote,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from 'lucide-react'
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      console.log('Selected file:', file.name);
-    }
-  };
+// ---- Types ----
+type Section = {
+  id: string
+  title: string
+  text: string
+  image: string
+  alt: string
+}
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragActive(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      setSelectedFile(file);
-      console.log('Dropped file:', file.name);
-    }
-  };
+export default function Home() {
+  const router = useRouter()
+  const prefersReducedMotion = useReducedMotion()
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragActive(true);
-  };
+  // Sections data (typed; no `as const` to avoid literal-type narrowing)
+  const sections = useMemo<Section[]>(
+    () => [
+      {
+        id: 'parse-cv',
+        title: 'Parse CVs with AI',
+        text:
+          'Upload a resume and SmartHire instantly extracts structured data—name, email, skills, experience and more—ready to search and match.',
+        image: '/images/CommonImages/homepage1.jpg',
+        alt: 'SmartHire parsing a resume into structured fields',
+      },
+      {
+        id: 'generate-questions',
+        title: 'Auto-generate interview questions',
+        text:
+          'For every role, SmartHire crafts tailored, competency-based questions so interviewers stay consistent and unbiased.',
+        image: '/images/CommonImages/homepage2.jpg',
+        alt: 'Generated interview question set shown in the app',
+      },
+      {
+        id: 'shortlist',
+        title: 'Shortlist faster with signals',
+        text:
+          'Surface the best candidates with skill signals, match scores, and recruiter notes—no more manual tab-hopping.',
+        image: '/images/CommonImages/homepage1.jpg',
+        alt: 'Candidate list ranked by match score with skill signals',
+      },
+      {
+        id: 'collaborate',
+        title: 'Collaborate securely',
+        text:
+          'Share evaluations, compare candidates, and keep your hiring panel in sync with role-based access and audit trails.',
+        image: '/images/CommonImages/homepage2.jpg',
+        alt: 'Team members collaborating with role-based access controls',
+      },
+    ],
+    []
+  )
 
-  const handleDragLeave = () => {
-    setDragActive(false);
-  };
+  // Wider state types so all images/alts are allowed
+  const [currentImage, setCurrentImage] = useState<string>(sections[0].image)
+  const [currentAlt, setCurrentAlt] = useState<string>(sections[0].alt)
 
-  const handleBrowseClick = () => {
-    document.getElementById('cv-upload')?.click();
-  };
+  // Refs for scroll observer
+  const refs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
-    const slider = document.getElementById('slider') as HTMLDivElement | null;
-    let scrollAmount = 0;
-    const scrollStep = 1;
-    const scrollInterval = 20;
-
-    const scroll = () => {
-      if (slider) {
-        const slideWidth = slider.clientWidth;
-        scrollAmount += scrollStep;
-        slider.scrollLeft = scrollAmount;
-
-        const currentSlide = Math.round(slider.scrollLeft / slideWidth);
-        setActiveSlide(currentSlide);
-
-        if (scrollAmount >= slider.scrollWidth - slider.clientWidth) {
-          scrollAmount = 0;
-          slider.scrollLeft = 0;
-          setActiveSlide(0);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find((e) => e.isIntersecting)
+        if (!visible) return
+        const index = refs.current.findIndex((ref) => ref === visible.target)
+        if (index !== -1) {
+          setCurrentImage(sections[index].image)
+          setCurrentAlt(sections[index].alt)
         }
-      }
-    };
+      },
+      { threshold: 0.55, rootMargin: '0px 0px -10% 0px' }
+    )
 
-    const intervalId = setInterval(scroll, scrollInterval);
-    return () => clearInterval(intervalId);
-  }, []);
-
-  const boxes = [
-    'Frontend', 'UI / UX', 'Backend', 'DevOps', 'Fullstack', 'Mobile', 'QA', 'AI',
-    'ML', 'Game Dev', 'Project Mgr', 'Security', 'Frontend', 'UI / UX', 'Backend', 'DevOps', 'Fullstack',
-    'Mobile', 'QA',
-  ];
-
-  const getItemsPerSlide = () => {
-    if (typeof window === 'undefined') return 8;
-    if (window.innerWidth < 640) return 4;
-    if (window.innerWidth < 1024) return 6;
-    return 8;
-  };
-
-  const [itemsPerSlide, setItemsPerSlide] = useState(getItemsPerSlide());
-
-  useEffect(() => {
-    const handleResize = () => {
-      setItemsPerSlide(getItemsPerSlide());
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const slides = [];
-  for (let i = 0; i < boxes.length; i += itemsPerSlide) {
-    slides.push(boxes.slice(i, i + itemsPerSlide));
-  }
+    refs.current.forEach((el) => el && observer.observe(el))
+    return () => refs.current.forEach((el) => el && observer.unobserve(el))
+  }, [sections])
 
   return (
-    <div className="p-4 sm:p-6 md:p-8">
-      <style jsx>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
-
-      <div className="mb-6">
-        <div className="text-center mb-6">
-          <p className="text-3xl sm:text-4xl md:text-5xl font-medium">
-            Are You Ready for the Interview?
-          </p>
-        </div>
-        <div className="bg-[#f6f6f6] rounded-tl-[100px] sm:rounded-tl-[200px] md:rounded-tl-[300px] rounded-tr-[30px] sm:rounded-tr-[40px] rounded-b-[30px] sm:rounded-b-[40px] p-4 sm:p-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="lg:basis-2/5 flex justify-center">
-              <div className="border-2 p-0.5 bg-black max-w-full">
-                <Image
-                  src="/images/CommonImages/Sample CV Template.jpg"
-                  alt="Sample CV"
-                  width={400}
-                  height={350}
-                  className="w-full h-auto object-contain"
-                />
-              </div>
-            </div>
-            <div className="lg:basis-3/5">
-              <div className="text-left p-4 sm:p-6">
-                <div className="bg-black">
-                  <h2 className="text-xl sm:text-2xl font-bold text-white text-center py-2">
-                    CV – Key Information
-                  </h2>
-                </div>
-                <ul className="list-disc pl-6 space-y-2 text-gray-700 text-sm sm:text-base">
-                  <li>Uploading your CV is the first step toward using our AI interview platform effectively.</li>
-                  <li>Your CV helps our system understand your background, skills, and goals.</li>
-                  <li>This enables personalized mock interviews, skill-based questions, and accurate feedback.</li>
-                  <li>Make sure your CV includes:
-                    <ul className="list-disc pl-6 space-y-1">
-                      <li>Full name and contact details</li>
-                      <li>A brief professional summary</li>
-                      <li>Education background</li>
-                      <li>Technical or soft skills</li>
-                      <li>Projects or achievements</li>
-                      <li>Work experience or internships</li>
-                    </ul>
-                  </li>
-                  <li>Refer to the sample CV provided above for a clear format.</li>
-                  <li>Use keywords relevant to your field (e.g., “React”, “Spring Boot” for developers).</li>
-                  <li>Keep the content updated with your latest experience and accomplishments.</li>
-                  <li>Accepted file formats: PDF, DOCX, JPG, or PNG.</li>
-                  <li>Your uploaded CV will remain secure and private.</li>
-                  <li>It will only be used to enhance your interview preparation experience.</li>
-                  <li>A well-structured CV ensures better results and more relevant AI guidance.</li>
-                </ul>
-              </div>
-              <div className="flex justify-center mb-6">
-                <button className="px-6 py-2 sm:px-8 sm:py-3 bg-black text-white rounded-2xl text-base sm:text-lg">
-                  Download Sample CV
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="relative min-h-screen bg-white text-gray-900">
+      {/* BG accents */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-24 -right-16 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-black via-gray-900 to-gray-700 opacity-[0.06] blur-3xl" />
+        <div className="absolute -bottom-32 -left-16 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-gray-800 via-gray-900 to-black opacity-[0.05] blur-3xl" />
       </div>
 
-      <div>
-        <div className="px-4 sm:px-8 mt-4 mb-4">
-          <p className="text-2xl sm:text-3xl font-semibold">Select Your Job Type</p>
-        </div>
-        <div
-          id="slider"
-          className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
-          style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
-        >
-          {slides.map((slide, slideIndex) => (
-            <div
-              key={slideIndex}
-              className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 min-w-[100vw] px-3 ${
-                itemsPerSlide === 4 ? 'grid-rows-2' : itemsPerSlide === 6 ? 'grid-rows-2' : 'grid-rows-2'
-              }`}
+      {/* HERO */}
+      <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 pb-16 pt-10 md:grid-cols-2 md:pb-20 md:pt-14">
+        <div>
+          <motion.h1
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
+            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-balance text-4xl font-semibold leading-tight sm:text-5xl md:text-6xl"
+          >
+            Hire <span className="bg-gradient-to-r from-black via-gray-900 to-gray-700 bg-clip-text text-transparent">smarter</span>,
+            not harder.
+          </motion.h1>
+          <p className="mt-5 max-w-xl text-lg text-gray-700">
+            SmartHire turns resumes into structured data, generates tailored interview questions, and helps your team
+            shortlist top talent in minutes not weeks.
+          </p>
+
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <button
+              onClick={() => router.push('/auth/candidate/sign-up')}
+              className="inline-flex items-center justify-center rounded-full bg-black px-6 py-3 text-white shadow-sm transition hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40"
+              aria-label="Submit CV"
             >
-              {slide.map((label, index) => (
+              Submit CV <ArrowRight className="ml-2 h-4 w-4" />
+            </button>
+            <button
+              onClick={() => router.push('/auth/employer/sign-up')}
+              className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-gray-900 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+              aria-label="Sign up as Employer"
+            >
+              Sign up as Employer
+            </button>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl">
+            <Image
+              src="/images/CommonImages/homepage2.jpg"
+              alt="SmartHire dashboard preview"
+              width={900}
+              height={640}
+              priority
+              sizes="(min-width: 1024px) 800px, 100vw"
+              className="h-auto w-full object-cover"
+            />
+          </div>
+          {/* floating card */}
+          <motion.div
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="absolute -bottom-6 left-6 right-auto rounded-2xl border border-gray-200 bg-white p-4 shadow-xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-900/90 text-white">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">AI Questions Generated</p>
+                <p className="text-xs text-gray-600">Consistency for every interview</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FEATURES GRID */}
+      <section id="features" className="mx-auto w-full max-w-7xl px-4 py-14 md:py-20">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-semibold md:text-4xl">Why SmartHire</h2>
+          <p className="mt-3 text-gray-700">Everything you need to move from application to offer, faster.</p>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+          <FeatureCard
+            icon={<Briefcase className="h-5 w-5" />}
+            title="Structured resume parsing"
+            text="Extract clean, queryable candidate data—no copy/paste required."
+          />
+          <FeatureCard
+            icon={<Users className="h-5 w-5" />}
+            title="Role-based collaboration"
+            text="Keep hiring panels aligned with notes, tags, and access controls."
+          />
+          <FeatureCard
+            icon={<ShieldCheck className="h-5 w-5" />}
+            title="Fair, consistent interviews"
+            text="AI-generated, competency-based questions reduce bias and drift."
+          />
+        </div>
+      </section>
+
+      {/* STORY SCROLLER (left text, right image) */}
+      <section className="mx-auto w-full max-w-7xl px-4 pb-8 md:pb-14">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10">
+          {/* Left scrollable text */}
+          <div className="h-[60vh] overflow-y-auto pr-2 md:h-[75vh] md:pr-6">
+            <div className="space-y-8">
+              {sections.map((s, idx) => (
                 <div
-                  key={`${slideIndex}-${index}`}
-                  className="bg-[#5d5d5d] text-white rounded-2xl text-center text-lg sm:text-xl py-6 sm:py-8 snap-center"
+                  key={s.id}
+                  ref={(el) => { refs.current[idx] = el }} // return void
+                  className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-lg focus-within:ring-2 focus-within:ring-gray-300"
+                  tabIndex={0}
                 >
-                  {label}
+                  <h3 className="text-xl font-semibold md:text-2xl">{s.title}</h3>
+                  <p className="mt-2 text-gray-700">{s.text}</p>
+                  <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Scroll to explore</span>
+                  </div>
                 </div>
               ))}
             </div>
-          ))}
-        </div>
-        <div className="flex justify-center mt-4 space-x-2">
-          {slides.map((_, index) => (
-            <div
-              key={index}
-              className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
-                activeSlide === index ? 'bg-[#3d3d3d]' : 'bg-[#888888]'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <div>
-        <div className="px-4 sm:px-8 mt-4 mb-4">
-          <p className="text-2xl sm:text-3xl font-semibold">Select Your Positions</p>
-        </div>
-        <div className="px-4 sm:px-8 py-6 bg-[#f6f6f6] rounded-xl shadow-md max-w-6xl mx-auto">
-          <div className="flex flex-col">
-            <select
-              className="w-full p-3 border border-gray-300 rounded-lg bg-white text-black hover:bg-gray-300 cursor-pointer text-sm sm:text-base"
-            >
-              <option value="">Positions</option>
-              <option value="intern">Intern</option>
-              <option value="associate-se">Associate SE</option>
-              <option value="senior-se">Senior SE</option>
-            </select>
+          {/* Right sticky image with smooth cross-fade */}
+          <div className="sticky top-24 hidden h-[60vh] items-center justify-center md:flex md:h-[75vh]">
+            <div className="relative w-full overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentImage}
+                  initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <Image
+                    src={currentImage}
+                    alt={currentAlt}
+                    width={900}
+                    height={700}
+                    sizes="(min-width: 1024px) 600px, 100vw"
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="px-4 sm:px-8 mt-6 mb-6">
-        <p className="text-2xl sm:text-3xl font-semibold">Upload Your CV</p>
-        <div className="max-w-5xl mx-auto mt-6">
-          <div
-            className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-4 transition-colors duration-300 ${
-              dragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-400'
-            }`}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-          >
-            <input
-              id="cv-upload"
-              type="file"
-              accept=".pdf,.doc,.docx"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <MdOutlineCloudUpload className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
-            <p className="text-gray-600 text-sm sm:text-base">
-              Drag and drop your CV here, or click to browse
-            </p>
-            <p className="text-gray-400 text-xs sm:text-sm">
-              PDF, DOC, DOCX up to 10MB
-            </p>
-            <button
-              onClick={handleBrowseClick}
-              className="px-4 py-2 sm:px-6 sm:py-3 bg-black border rounded hover:bg-[#3d3d3d] text-white text-sm sm:text-base"
-            >
-              Browse Files
-            </button>
-            {selectedFile && (
-              <p className="text-green-600 text-xs sm:text-sm">
-                Selected file: {selectedFile.name}
-              </p>
-            )}
-          </div>
+      {/* HOW IT WORKS */}
+      <section id="how" className="mx-auto w-full max-w-7xl px-4 py-14 md:py-20">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-semibold md:text-4xl">How it works</h2>
+          <p className="mt-3 text-gray-700">From resume upload to confident hiring decisions in 3 steps.</p>
         </div>
-      </div>
-
-      <div className="bg-black rounded-tl-[50px] sm:rounded-tl-[100px] rounded-br-[50px] sm:rounded-br-[100px]">
-        <div className="text-white text-center p-6 sm:p-10">
-          <p className="text-xl sm:text-2xl md:text-3xl">
-            Ready to Ace Your Next Interview?
-          </p>
-          <p className="text-base sm:text-lg md:text-xl mt-2">
-            Join thousands of professionals who have improved their interview skills with our SmartHire platform.
-          </p>
-          <div className="flex justify-center mt-6 sm:mt-10">
-            <button className="flex items-center gap-3 sm:gap-5 text-lg sm:text-2xl md:text-3xl bg-white text-black px-4 py-2 sm:px-6 sm:py-3 rounded-2xl hover:bg-[#b0b0b0]">
-              <FaRocket /> Get Started
-            </button>
-          </div>
+        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+          <StepCard
+            step="01"
+            icon={<Building2 className="h-5 w-5" />}
+            title="Create a role"
+            text="Define competencies and must-have skills."
+          />
+          <StepCard
+            step="02"
+            icon={<Sparkles className="h-5 w-5" />}
+            title="Upload resumes"
+            text="SmartHire parses and scores candidates instantly."
+          />
+          <StepCard
+            step="03"
+            icon={<Clock className="h-5 w-5" />}
+            title="Interview with structure"
+            text="Use generated questions; compare apples-to-apples."
+          />
         </div>
-      </div>
+      </section>
     </div>
-  );
-};
+  )
+}
 
-// Home Component
-export default function Home() {
+/* ------------------------- Small components ------------------------- */
+function FeatureCard({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
-    <div className="bg-white min-h-screen p-4 sm:p-6 md:p-8">
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
-        {/* Left (Image) */}
-        <div className="w-full md:w-1/2">
-          <div className="mt-8 sm:mt-10 md:mt-12 px-4 sm:px-8 md:px-12">
-            <Image
-              src="/images/CommonImages/homepage2.jpg"
-              alt="Hero Image"
-              width={500}
-              height={200}
-              className="rounded-3xl object-cover w-full h-auto max-h-64 sm:max-h-80 md:max-h-96"
-            />
-          </div>
-        </div>
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-gray-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-900 text-white">{icon}</div>
+      <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+      <p className="mt-1 text-gray-700">{text}</p>
+    </div>
+  )
+}
 
-        {/* Right (Text + Button + Logo) */}
-        <div className="w-full md:w-1/2">
-          <div className="p-4 sm:p-5 md:p-6">
-            <div className="flex flex-col sm:flex-row items-center mt-4 sm:mt-6">
-              <div className="text-3xl sm:text-4xl md:text-5xl font-medium text-center sm:text-left">
-                Welcome to
-              </div>
-              <div className="mt-4 sm:mt-0 sm:ml-4">
-                <Image
-                  src="/images/CommonImages/logoBlack.png"
-                  alt="Logo"
-                  width={120}
-                  height={120}
-                  className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 object-contain"
-                />
-              </div>
-            </div>
-            <p className="text-xl sm:text-2xl md:text-3xl text-center sm:text-left text-gray-800 leading-normal mt-4 sm:mt-6">
-              Discover amazing destinations and experiences curated just for you.
-            </p>
-            <div className="flex flex-col sm:flex-row mt-6 sm:mt-8 md:mt-10 gap-4 sm:gap-6">
-              <button className="px-6 py-2 sm:px-8 sm:py-3 bg-black text-white rounded-full text-base sm:text-lg hover:bg-gray-900 transition w-full sm:w-auto">
-                Sign In as Candidate
-              </button>
-              <button className="px-6 py-2 sm:px-8 sm:py-3 bg-black text-white rounded-full text-base sm:text-lg hover:bg-gray-900 transition w-full sm:w-auto">
-                Sign Up as Candidate
-              </button>
-            </div>
-          </div>
-        </div>
+function StepCard({ step, icon, title, text }: { step: string; icon: React.ReactNode; title: string; text: string }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-900 text-white">{icon}</div>
+        <span className="text-sm font-medium text-gray-500">Step {step}</span>
       </div>
+      <h3 className="mt-3 text-lg font-semibold">{title}</h3>
+      <p className="mt-1 text-gray-700">{text}</p>
+    </div>
+  )
+}
 
-      {/* SlideShow Section */}
-      <div className="mt-6 sm:mt-8 md:mt-10">
-        <SlideShow1 />
+function TestimonialCard({ quote, author, role }: { quote: string; author: string; role: string }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <Quote className="h-5 w-5 text-gray-400" />
+      <p className="mt-3 text-gray-800">“{quote}”</p>
+      <div className="mt-4">
+        <p className="font-semibold">{author}</p>
+        <p className="text-sm text-gray-600">{role}</p>
       </div>
     </div>
-  );
+  )
+}
+
+function Stat({ title, value, suffix = '' }: { title: string; value: string; suffix?: string }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <p className="text-sm text-gray-500">{title}</p>
+      <p className="mt-1 text-4xl font-semibold tracking-tight">
+        {value}
+        <span className="ml-1 text-2xl text-gray-500">{suffix}</span>
+      </p>
+    </div>
+  )
 }
