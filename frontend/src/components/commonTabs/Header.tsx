@@ -135,12 +135,17 @@ const Navbar = () => {
             </Link>
           </li>
           <li>
-            <Link href="/about" className="hover:text-[#d1d1d1]">
+            <Link href="/submit-cv" className="hover:text-[#d1d1d1]">
+              Submit-Cv
+            </Link>
+          </li>
+          <li>
+            <Link href="/about-us" className="hover:text-[#d1d1d1]">
               About Us
             </Link>
           </li>
           <li>
-            <Link href="/contact" className="hover:text-[#d1d1d1]">
+            <Link href="/contact-us" className="hover:text-[#d1d1d1]">
               Contact
             </Link>
           </li>
