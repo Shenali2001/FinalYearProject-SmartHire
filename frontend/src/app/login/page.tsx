@@ -15,7 +15,7 @@ const Login = () => {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      const response = await axios.post('http://127.0.0.1:8000/auth/login', {
+      const response = await axios.post('http://127.0.0.1:8000/login', {
         email,
         password,
       });
