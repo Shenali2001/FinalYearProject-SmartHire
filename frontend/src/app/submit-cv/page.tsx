@@ -26,7 +26,8 @@ export default function SubmitCv() {
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const allowedExt = useMemo(() => ["pdf", "doc", "docx"], []);
+  const allowedExt = useMemo(() => ["pdf"], []);
+  const allowedMime = useMemo(() => ["application/pdf"], []);
   const maxSizeBytes = 10 * 1024 * 1024; // 10MB
 
   const token = useMemo(() =>
@@ -36,23 +37,27 @@ export default function SubmitCv() {
 
   // ------------ helpers ------------
   const onFile = useCallback(
-    (f: File) => {
-      setError(null);
-      const ext = f.name.split(".").pop()?.toLowerCase();
-      if (!ext || !allowedExt.includes(ext)) {
-        setError("Allowed formats: PDF, DOC, DOCX.");
-        setFile(null);
-        return;
-      }
-      if (f.size > maxSizeBytes) {
-        setError("File too large. Max 10MB.");
-        setFile(null);
-        return;
-      }
-      setFile(f);
-    },
-    [allowedExt]
-  );
+  (f: File) => {
+    setError(null);
+    const ext = f.name.split(".").pop()?.toLowerCase();
+    const typeOk = allowedMime.includes(f.type); // strict MIME check
+    const extOk = !!ext && allowedExt.includes(ext);
+
+    if (!typeOk || !extOk) {
+      setError("PDF only. Max 10MB.");
+      setFile(null);
+      return;
+    }
+    if (f.size > maxSizeBytes) {
+      setError("PDF only. Max 10MB.");
+      setFile(null);
+      return;
+    }
+    setFile(f);
+  },
+  [allowedExt, allowedMime]
+);
+
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -177,6 +182,8 @@ export default function SubmitCv() {
     <div className="flex items-center gap-3"><div className="text-gray-800">{icon}</div><div className="text-lg font-extrabold tracking-tight text-gray-900">{title}</div></div>
   );
 
+  const SAMPLE_CV_URL = "https://firebasestorage.googleapis.com/v0/b/smarthire-ai-interview.firebasestorage.app/o/sampleCv%2Fsample_templete_cv_downloard.pdf?alt=media&token=679d0c4c-9d26-42d4-ab68-798c8c88151c"
+
   return (
     <div className="min-h-[100dvh] bg-gradient-to-b from-white to-gray-50">
       {/* HEADER */}
@@ -239,7 +246,7 @@ export default function SubmitCv() {
               <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-gray-200">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="none" className="text-gray-700"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 21h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
-              {!file && (<div><div className="text-sm text-gray-700">Drag & drop your CV here, or click to browse</div><div className="mt-2 text-xs text-gray-500">PDF, DOC, DOCX up to 10MB</div><div className="mt-5"><div onClick={browse} className="inline-flex cursor-pointer rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-90">Browse Files</div></div></div>)}
+              {!file && (<div><div className="text-sm text-gray-700">Drag & drop your CV here, or click to browse</div><div className="mt-2 text-xs text-gray-500">PDF only 10MB</div><div className="mt-5"><div onClick={browse} className="inline-flex cursor-pointer rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-90">Browse Files</div></div></div>)}
               {file && (
                 <div className="mx-auto max-w-lg">
                   <div className="rounded-xl border border-gray-200 p-4 text-left"><div className="flex items-center justify-between gap-3"><div><div className="text-sm font-medium text-gray-900">{file.name}</div><div className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</div></div><div onClick={() => setFile(null)} className="cursor-pointer rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Remove</div></div></div>
@@ -260,10 +267,10 @@ export default function SubmitCv() {
                 </div>
               )}
               {error && <div className="mt-4 text-sm text-red-600">{error}</div>}
-              <input ref={inputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
+              <input ref={inputRef} type="file" className="hidden" accept=".pdf,application/pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
             </div>
             <div className="mx-auto mt-8 px-6 pb-2">
-              <button onClick={submit} disabled={!selectedJobType || !selectedPosition || !file || uploading} className={["inline-flex h-11 w-full items-center justify-center rounded-xl bg-gray-900 px-6 text-sm font-semibold text-white shadow hover:opacity-90", (!selectedJobType || !selectedPosition || !file || uploading) ? "cursor-not-allowed opacity-50" : ""].join(" ")}>{uploading ? "Uploading…" : "Submit Application"}</button>
+              <button onClick={submit} disabled={!selectedJobType || !selectedPosition || !file || uploading} className={["inline-flex h-11 w-full items-center justify-center rounded-xl bg-black px-6 text-sm font-semibold text-white shadow hover:opacity-90", (!selectedJobType || !selectedPosition || !file || uploading) ? "cursor-not-allowed " : ""].join(" ")}>{uploading ? "Uploading…" : "Submit Application"}</button>
             </div>
           </div>
         </div>
@@ -271,12 +278,37 @@ export default function SubmitCv() {
         {/* RIGHT: PREVIEW (static for now) */}
         <div className="lg:sticky lg:top-6">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:h-[calc(100vh-1.5rem)] lg:max-h-[calc(100vh-1.5rem)] flex flex-col overflow-hidden">
-            <div className="mb-5 flex justify-center shrink-0">
-              <div className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-black px-4 py-2 text-xs font-semibold text-white shadow hover:opacity-90" onClick={() => alert("Hook this to your template download")}> 
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <div>Download Template</div>
+             {/* Download Template Button */}
+              <div className="mb-5 flex justify-center shrink-0">
+                <button
+                  onClick={() => {
+                    const a = document.createElement("a");
+                    a.href = SAMPLE_CV_URL;         // your Firebase Storage URL
+                    a.download = "sample_cv.pdf";   // suggested filename
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-black px-4 py-2 text-xs font-semibold text-white shadow hover:opacity-90"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>Download Template</span>
+                </button>
               </div>
-            </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto pr-2">
               <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -295,12 +327,18 @@ export default function SubmitCv() {
                 <div className="mt-3 text-[13px] text-gray-800">Your education…</div>
                 <Divider />
                 <SectionTitle icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8h6M4 16h6M14 6h6M14 18h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/> </svg>} title="SKILLS" />
-                <div className="mt-3 text-[13px] leading-6 text-gray-800">React, Next.js, Spring Boot…</div>
+                <div className="mt-3 text-[13px] leading-6 text-gray-800">Your Skills(eg:- React, Next.js, Spring Boot…)</div>
                 <Divider />
                 <SectionTitle icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 7h10v10H7zM3 3h4v4H3zM17 17h4v4h-4z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/> </svg>} title="PROJECTS" />
                 <div className="mt-3 space-y-4">
                   <Bullet>Project 1 …</Bullet>
                   <Bullet>Project 2 …</Bullet>
+                </div>
+                <Divider />
+                <SectionTitle icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 7h10v10H7zM3 3h4v4H3zM17 17h4v4h-4z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/> </svg>} title="WORK EXPERIENCE" />
+                <div className="mt-3 space-y-4">
+                  <Bullet>Your Work Experience 1 …</Bullet>
+                  <Bullet>Your Work Experience 2 …</Bullet>
                 </div>
               </div>
             </div>

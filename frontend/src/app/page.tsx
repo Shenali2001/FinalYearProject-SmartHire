@@ -120,14 +120,14 @@ export default function Home() {
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <button
-              onClick={() => router.push('/auth/candidate/sign-up')}
+              onClick={() => router.push('/submit-cv')}
               className="inline-flex items-center justify-center rounded-full bg-black px-6 py-3 text-white shadow-sm transition hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40"
               aria-label="Submit CV"
             >
               Submit CV <ArrowRight className="ml-2 h-4 w-4" />
             </button>
             <button
-              onClick={() => router.push('/auth/employer/sign-up')}
+              onClick={() => router.push('/register')}
               className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-gray-900 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
               aria-label="Sign up as Employer"
             >

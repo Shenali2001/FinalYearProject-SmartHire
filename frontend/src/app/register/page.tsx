@@ -37,7 +37,7 @@ const Registration = () => {
   const handleRegistration = async () => {
     try {
       setLoading(true);
-      const response = await axios.post('http://127.0.0.1:8000/auth/register', user);
+      const response = await axios.post('http://127.0.0.1:8000/register', user);
 
       if (response.status === 200 || response.status === 201) {
         setShowModal(true); // Show success modal
@@ -142,8 +142,8 @@ const Registration = () => {
       {showModal && (
         // <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50">
         <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg px-8 py-6 text-center">
-            <h3 className="text-2xl font-semibold text-green-600 mb-2">
+          <div className="bg-white rounded-xl shadow-lg px-12 py-10 text-center">
+            <h3 className="text-2xl font-bold text-Black mb-2">
               Registration Successful 🎉
             </h3>
             <p className="text-gray-600">Redirecting to login...</p>

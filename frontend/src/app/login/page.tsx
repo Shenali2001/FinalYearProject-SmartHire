@@ -99,8 +99,8 @@ const Login = () => {
       {/* Success Modal */}
       {showModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg px-8 py-6 text-center">
-            <h3 className="text-2xl font-semibold text-green-600 mb-2">
+          <div className="bg-white rounded-xl shadow-lg px-12 py-10 text-center">
+            <h3 className="text-2xl font-semibold text-Black mb-2">
               Login Successful 🎉
             </h3>
             <p className="text-gray-600">Redirecting to home...</p>
