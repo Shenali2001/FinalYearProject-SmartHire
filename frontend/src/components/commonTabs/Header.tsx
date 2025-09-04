@@ -116,7 +116,9 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="bg-[#3d3d3d] shadow-md px-10 py-1 flex items-center justify-between">
+      
+      <nav className="sticky top-0 z-50 bg-black shadow-md px-10 py-1 flex items-center justify-between">
+
         {/* Logo */}
         <div className="flex items-center gap-2 p-3">
           <Image
