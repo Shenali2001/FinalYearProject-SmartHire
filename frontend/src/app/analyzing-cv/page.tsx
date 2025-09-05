@@ -148,7 +148,6 @@
 //     </div>
 //   );
 // }
-
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -157,8 +156,7 @@ import { useUploadStore } from "../utils/upload-store";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../utils/firebase";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 type StepStatus = "idle" | "running" | "success" | "error";
 type StepsState = {
@@ -191,29 +189,21 @@ export default function AnalyzingPage() {
   });
 
   const workingRef = useRef<boolean>(true);
+  const startedRef = useRef<boolean>(false); // <-- STRICT MODE GUARD
 
-  const setStep = (
-    k: keyof StepsState,
-    v: StepStatus | ((prev: StepStatus) => StepStatus)
-  ) => setSteps((s) => ({ ...s, [k]: typeof v === "function" ? (v as any)(s[k]) : v }));
+  const setStep = (k: keyof StepsState, v: StepStatus | ((prev: StepStatus) => StepStatus)) =>
+    setSteps((s) => ({ ...s, [k]: typeof v === "function" ? (v as any)(s[k]) : v }));
 
-  // Lightweight animation of steps while we're uploading/posting
+  // Animate steps while work is ongoing
   useEffect(() => {
-    // if we already errored or finished, don't animate
     if (error) return;
-
-    // kick off animation sequence
     setStep("parsing", "running");
-
     const t1 = setTimeout(() => setStep("skills", "running"), 800);
     const t2 = setTimeout(() => setStep("experience", "running"), 1600);
     const t3 = setTimeout(() => setStep("questions", "running"), 2400);
-
-    // gentle progress drift while work is ongoing
     const drift = setInterval(() => {
       setProgress((p) => (workingRef.current ? Math.min(95, p + 2) : p));
     }, 400);
-
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -223,8 +213,11 @@ export default function AnalyzingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
-  // Main pipeline (upload → POST /cv → complete)
+  // Main pipeline (upload -> POST /cv -> complete) with run-once guard
   useEffect(() => {
+    if (startedRef.current) return; // prevent double-run in dev Strict Mode
+    startedRef.current = true;
+
     (async () => {
       try {
         if (!token) {
@@ -236,7 +229,7 @@ export default function AnalyzingPage() {
           return;
         }
 
-        // 1) Upload to Firebase (drives the Upload progress bar)
+        // 1) Upload to Firebase
         const path = `cv/${Date.now()}_${file.name}`;
         const storageRef = ref(storage, path);
         const task = uploadBytesResumable(storageRef, file);
@@ -255,17 +248,20 @@ export default function AnalyzingPage() {
 
         const downloadURL = await getDownloadURL(task.snapshot.ref);
 
-        // 2) Tell backend to save/analyze (no status endpoint used)
+        // 2) POST to backend (no status endpoint; include idempotency key for safety)
+        const idemKey = (crypto as any)?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
         const resp = await fetch(`${API_BASE_URL}/cv`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
+            "X-Idempotency-Key": idemKey,
           },
           body: JSON.stringify({
             cv_url: downloadURL,
             job_type_id: jobTypeId,
             job_position_id: positionId,
+            idempotency_key: idemKey,
           }),
         });
 
@@ -278,13 +274,12 @@ export default function AnalyzingPage() {
           throw new Error(msg);
         }
 
-        // If your backend returns an id / result_url, grab them (optional)
         const data = await resp.json().catch(() => ({} as any));
         const id = data?.id ?? data?.cv_id ?? data?.uuid ?? null;
         if (id) setCvId(id);
         if (data?.result_url) setResultUrl(data.result_url);
 
-        // 3) Mark everything as completed (since analysis is “done” after upload+POST)
+        // 3) Complete UI
         workingRef.current = false;
         setUploadPct(100);
         setProgress(100);
@@ -295,14 +290,12 @@ export default function AnalyzingPage() {
       } catch (e: any) {
         workingRef.current = false;
         setError(e?.message || "Something went wrong.");
-        // Mark any running/idle steps as failed
         setStep("parsing", (s) => (s === "success" ? s : "error"));
         setStep("skills", (s) => (s === "success" ? s : "error"));
         setStep("experience", (s) => (s === "success" ? s : "error"));
         setStep("questions", (s) => (s === "success" ? s : "error"));
       } finally {
-        // clear in-memory payload (optional)
-        reset();
+        reset(); // clear in-memory payload
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -372,13 +365,7 @@ export default function AnalyzingPage() {
       <div className="mx-auto max-w-3xl px-6 pb-24 pt-10">
         {/* Logo */}
         <div className="mx-auto grid h-20 w-40 place-items-center rounded-3xl bg-blue-100 ring-8 ring-blue-50">
-          <Image
-            src="/images/CommonImages/logoBlack.png"
-            alt="Brand logo"
-            width={100}
-            height={50}
-            className="object-contain"
-          />
+          <Image src="/images/CommonImages/logoBlack.png" alt="Brand logo" width={100} height={50} className="object-contain" />
         </div>
 
         {/* Title & Subtitle */}
@@ -396,10 +383,7 @@ export default function AnalyzingPage() {
             <div>{Math.round(uploadPct)}%</div>
           </div>
           <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
-            <div
-              className="h-2 rounded-full bg-gray-900"
-              style={{ width: `${Math.round(uploadPct)}%` }}
-            />
+            <div className="h-2 rounded-full bg-gray-900" style={{ width: `${Math.round(uploadPct)}%` }} />
           </div>
         </div>
 
@@ -410,10 +394,7 @@ export default function AnalyzingPage() {
             <div>{Math.round(progress)}%</div>
           </div>
           <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
-            <div
-              className="h-2 rounded-full bg-gray-900"
-              style={{ width: `${Math.round(progress)}%` }}
-            />
+            <div className="h-2 rounded-full bg-gray-900" style={{ width: `${Math.round(progress)}%` }} />
           </div>
         </div>
 
@@ -465,9 +446,7 @@ export default function AnalyzingPage() {
 
         {/* What AI looks for */}
         <div className="mx-auto mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="text-center text-base font-semibold text-gray-900">
-            What Our AI is Looking For
-          </div>
+          <div className="text-center text-base font-semibold text-gray-900">What Our AI is Looking For</div>
           <div className="mt-4 grid gap-8 md:grid-cols-2">
             <div>
               <div className="text-sm font-semibold text-gray-900">Technical Skills</div>
@@ -493,16 +472,12 @@ export default function AnalyzingPage() {
             </div>
           )}
 
-          {/* Optional: show a results button when done */}
           {!error && progress === 100 && (
             <div className="mt-6 flex justify-center">
               <button
                 onClick={() => {
-                  if (resultUrl) {
-                    window.location.href = resultUrl;
-                  } else if (cvId) {
-                    router.push(`/start-interview`);
-                  }
+                  if (resultUrl) window.location.href = resultUrl;
+                  else if (cvId) router.push(`/start-interview`);
                 }}
                 className="rounded-xl bg-black px-5 py-2 text-sm font-semibold text-white shadow hover:opacity-90"
               >
