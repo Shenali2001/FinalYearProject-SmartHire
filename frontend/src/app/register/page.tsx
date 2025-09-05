@@ -25,6 +25,7 @@ const Registration = () => {
 
   const [showModal, setShowModal] = useState(false); // For success popup
   const [loading, setLoading] = useState(false); // Optional: For button loading state
+  const [showPassword, setShowPassword] = useState<boolean>(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -96,7 +97,7 @@ const Registration = () => {
               className="w-full px-4 py-2 border rounded-xl bg-gray-200 placeholder-gray-500"
             />
           </div>
-          <div>
+          {/* <div>
             <label className="block font-semibold mb-1">Password:</label>
             <input
               type="password"
@@ -106,6 +107,48 @@ const Registration = () => {
               placeholder="Password"
               className="w-full px-4 py-2 border rounded-xl bg-gray-200 placeholder-gray-500"
             />
+          </div> */}
+          <div>
+            <label className="block font-semibold mb-1">Password:</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={user.password}
+                onChange={handleInputChange}
+                placeholder="Password"
+                className="w-full px-4 py-2 border rounded-xl bg-gray-200 placeholder-gray-500 pr-16"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-2 my-auto p-2 "
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  // Eye-off (hide)
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" strokeWidth="1.5"
+                      className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c1.61 0 3.14-.33 4.5-.93M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.5a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65M20.772 20.772L3 3m17.772 17.772l-3.65-3.65M9.88 9.88a3 3 0 004.24 4.24" />
+                  </svg>
+                ) : (
+                  // Eye (show)
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" strokeWidth="1.5"
+                      className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.364 4.5 12 4.5c4.636 0 8.577 3.01 9.964 7.178.07.214.07.43 0 .644C20.577 16.49 16.636 19.5 12 19.5c-4.636 0-8.577-3.01-9.964-7.178z" />
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                )}
+                <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+              </button>
+            </div>
           </div>
           <div>
             <label className="block font-semibold mb-1">Phone Number:</label>
