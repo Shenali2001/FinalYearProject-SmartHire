@@ -11,6 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     try {
@@ -36,7 +37,8 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      alert('Invalid email or password. Please try again.');
+      // alert('Invalid email or password. Please try again.');
+      setError("Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -55,6 +57,9 @@ const Login = () => {
         <Image src="/images/CommonImages/logoBlack.png" alt='Smart-Hire' className="mx-auto mb-0 object-contain" width={150} height={150} />
         <h2 className="text-3xl font-semibold mb-6">Login</h2>
 
+         {error && (
+          <div className="mb-4 rounded-lg bg-red-900/40 border border-red-700 p-3 text-sm text-black">{error}</div>
+        )}
         <div className="text-left space-y-4">
           <div>
             <label className="block font-semibold mb-1">Your Email:</label>
