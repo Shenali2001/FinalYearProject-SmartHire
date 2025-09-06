@@ -1,5 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 /* ---------------- Types ---------------- */
 interface Question {
@@ -49,6 +50,7 @@ const AudioInterviewPage: React.FC = () => {
   /* ---------------- Config ---------------- */
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
   const MAX_QUESTIONS = 10; // fixed
+  const router = useRouter();
 
   /* ---------------- UI / Flow State ---------------- */
   const [email, setEmail] = useState<string>("");
@@ -148,7 +150,6 @@ const AudioInterviewPage: React.FC = () => {
   const speakText = useCallback(
     async (text: string, opts?: SpeakOpts) => {
       if (!ttsSupported || !ttsEnabled || !text) {
-        // still unlock flow
         opts?.onend?.();
         return;
       }
@@ -208,7 +209,7 @@ const AudioInterviewPage: React.FC = () => {
         micStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       }
       if (!audioCtxRef.current) {
-        const AC = window.AudioContext || window.webkitAudioContext;
+        const AC = window.AudioContext || (window as any).webkitAudioContext;
         audioCtxRef.current = new AC();
       }
       const ctx = audioCtxRef.current!;
@@ -254,7 +255,7 @@ const AudioInterviewPage: React.FC = () => {
 
   useEffect(() => {
     if (!hydrated) return;
-    const support = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    const support = !!(window.SpeechRecognition || (window as any).webkitSpeechRecognition);
     setSrSupported(support);
   }, [hydrated]);
 
@@ -370,7 +371,7 @@ const AudioInterviewPage: React.FC = () => {
         }
       }
 
-      const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const Ctor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (!Ctor) return;
       const recog = new Ctor();
       recRef.current = recog;
@@ -381,7 +382,7 @@ const AudioInterviewPage: React.FC = () => {
       recog.maxAlternatives = 1;
 
       try {
-        const GrammarListCtor = window.SpeechGrammarList || window.webkitSpeechGrammarList;
+        const GrammarListCtor = (window as any).SpeechGrammarList || (window as any).webkitSpeechGrammarList;
         if (GrammarListCtor && autoLexicon.length) {
           const list = new GrammarListCtor();
           const esc = (w: string) => w.replace(/([\\;=|])/g, "\\$1");
@@ -601,105 +602,78 @@ const AudioInterviewPage: React.FC = () => {
         setAnswer("");
         return;
       }
-
-      if (answeredCount < MAX_QUESTIONS) {
-        if (questionCache.length > 0) {
-          const cacheIndex = qIndex % questionCache.length;
-          const nextQuestion = questionCache[cacheIndex];
-          setQIndex(answeredCount);
-          setCurrentQuestion(nextQuestion.question);
-          setMeta({ difficulty: nextQuestion.difficulty, tag: nextQuestion.tag, scored: nextQuestion.scored });
-          setAnswer("");
-          setError("API didn't provide a next question. Reusing a previous one.");
-          return;
-        } else {
-          try {
-            const restartUrl = `${API_BASE}/interview/start?email=${encodeURIComponent(
-              email
-            )}&max_questions=${encodeURIComponent(String(MAX_QUESTIONS))}`;
-            const restartRes = await fetch(restartUrl, { method: "POST" });
-            if (!restartRes.ok) throw new Error(`Restart failed (${restartRes.status})`);
-            const newData: StartResponse = await restartRes.json();
-            if (!newData.question) throw new Error("No question returned from API");
-
-            setQIndex(answeredCount);
-            setCurrentQuestion(newData.question);
-            setMeta({ difficulty: newData.difficulty, tag: newData.tag, scored: newData.scored });
-            setAnswer("");
-            setQuestionCache((cache) => [
-              ...cache,
-              { question: newData.question, difficulty: newData.difficulty, tag: newData.tag, scored: newData.scored },
-            ]);
-            setError("API didn't provide a next question. Fetched a new one to continue.");
-            return;
-          } catch (retryError: any) {
-            setError(retryError?.message || "Failed to fetch new question. Ending interview.");
-            setQIndex(answeredCount);
-            setCurrentQuestion(null);
-            setMeta(null);
-            setStarted(false);
-            setFinished(true);
-          }
-        }
-      } else {
-        setQIndex(answeredCount);
-        setCurrentQuestion(null);
-        setMeta(null);
-        setStarted(false);
-        setFinished(true);
-        setAnswer("");
-      }
     } catch (e: any) {
       setError(e?.message || "Failed to fetch next question.");
-      const answeredCount = qIndex + 1;
-
-      if (answeredCount < MAX_QUESTIONS) {
-        if (questionCache.length > 0) {
-          const cacheIndex = qIndex % questionCache.length;
-          const nextQuestion = questionCache[cacheIndex];
-          setQIndex(answeredCount);
-          setCurrentQuestion(nextQuestion.question);
-          setMeta({ difficulty: nextQuestion.difficulty, tag: nextQuestion.tag, scored: nextQuestion.scored });
-          setAnswer("");
-        } else {
-          try {
-            const restartUrl = `${API_BASE}/interview/start?email=${encodeURIComponent(
-              email
-            )}&max_questions=${encodeURIComponent(String(MAX_QUESTIONS))}`;
-            const restartRes = await fetch(restartUrl, { method: "POST" });
-            if (!restartRes.ok) throw new Error(`Restart failed (${restartRes.status})`);
-            const newData: StartResponse = await restartRes.json();
-            if (!newData.question) throw new Error("No question returned from API");
-
-            setQIndex(answeredCount);
-            setCurrentQuestion(newData.question);
-            setMeta({ difficulty: newData.difficulty, tag: newData.tag, scored: newData.scored });
-            setAnswer("");
-            setQuestionCache((cache) => [
-              ...cache,
-              { question: newData.question, difficulty: newData.difficulty, tag: newData.tag, scored: newData.scored },
-            ]);
-          } catch (retryError: any) {
-            setError(retryError?.message || "Failed to fetch new question. Ending interview.");
-            setQIndex(answeredCount);
-            setCurrentQuestion(null);
-            setMeta(null);
-            setStarted(false);
-            setFinished(true);
-          }
-        }
-      } else {
-        setQIndex(answeredCount);
-        setCurrentQuestion(null);
-        setMeta(null);
-        setStarted(false);
-        setFinished(true);
-      }
     } finally {
       setIsFetchingNext(false);
       setLoading(false);
     }
   }, [API_BASE, email, answer, currentQuestion, meta, qIndex, questionCache, questionLocked, cancelSpeech, stopListening]);
+
+  /* ---- NEW: Skip Question ---- */
+  const skipQuestion = useCallback(async () => {
+    if (!API_BASE) { setError("API base URL is not configured."); return; }
+    if (!currentQuestion) return;
+
+    setLoading(true);
+    setIsFetchingNext(true);
+    setError(null);
+
+    try {
+      // Record the skip locally
+      setHistory((h) => [
+        ...h,
+        { question: currentQuestion, answer: "(skipped)", difficulty: meta?.difficulty, tag: meta?.tag, scored: meta?.scored },
+      ]);
+
+      // Stop any audio
+      cancelSpeech();
+      stopListening();
+
+      // Tell backend we're skipping (send "(skipped)" as the answer)
+      const url = `${API_BASE}/interview/answer?email=${encodeURIComponent(email)}&answer=${encodeURIComponent(
+        "(skipped)"
+      )}&question=${encodeURIComponent(currentQuestion)}`;
+      const res = await fetch(url, { method: "POST" });
+      if (!res.ok) throw new Error(`Skip failed (${res.status})`);
+
+      const data: AnswerResponse = await res.json();
+
+      const answeredCount = qIndex + 1;
+
+      if (data.final?.status === "finished") {
+        setQIndex(answeredCount);
+        setFinalReport(data.final || null);
+        setCurrentQuestion(null);
+        setMeta(null);
+        setStarted(false);
+        setFinished(true);
+        setAnswer("");
+        return;
+      }
+
+      if (data.next?.question) {
+        setQIndex((i) => i + 1);
+        setCurrentQuestion(data.next.question);
+        setMeta({ difficulty: data.next.difficulty, tag: data.next.tag, scored: data.next.scored });
+        setAnswer("");
+        return;
+      }
+
+      // No next question returned — end session gracefully
+      setQIndex(answeredCount);
+      setCurrentQuestion(null);
+      setMeta(null);
+      setStarted(false);
+      setFinished(true);
+      setAnswer("");
+    } catch (e: any) {
+      setError(e?.message || "Failed to skip question.");
+    } finally {
+      setIsFetchingNext(false);
+      setLoading(false);
+    }
+  }, [API_BASE, email, currentQuestion, meta, qIndex, cancelSpeech, stopListening]);
 
   const resetAll = useCallback(() => {
     setStarted(false);
@@ -748,12 +722,11 @@ const AudioInterviewPage: React.FC = () => {
     </svg>
   );
 
-  // ✅ Mic animation ONLY when output speaking OR input level above gate
+  // Mic bubble
   const MicBubble: React.FC<{ outSpeaking: boolean; level: number }> = ({ outSpeaking, level }) => {
     const voiceLevel = Math.max(0, Math.min(1, level));
-    const talking = voiceLevel > 0.06; // tweakable gate
+    const talking = voiceLevel > 0.06;
     const active = outSpeaking || talking;
-
     const scale = outSpeaking ? 1.1 : (talking ? 1 + voiceLevel * 0.35 : 1);
     const glow = outSpeaking ? 0.25 : (talking ? 0.10 + voiceLevel * 0.25 : 0);
 
@@ -792,6 +765,16 @@ const AudioInterviewPage: React.FC = () => {
     </svg>
   );
   const Dot = ({ color = "bg-emerald-500" }: { color?: string }) => <div className={["h-2 w-2 rounded-full", color].join(" ")} />;
+
+  /* ---------------- Go to feedback (/report) ---------------- */
+  const goToFeedback = useCallback(() => {
+    if (!finalReport) return;
+    try {
+      sessionStorage.setItem("finalReport", JSON.stringify(finalReport));
+    } catch {}
+    const rid = (finalReport as any)?.report_id;
+    router.push(rid ? `/report?rid=${encodeURIComponent(String(rid))}` : "/report");
+  }, [finalReport, router]);
 
   /* ---------------- Overlay while fetching next question ---------------- */
   const FetchingOverlay: React.FC<{ visible: boolean }> = ({ visible }) => {
@@ -862,56 +845,43 @@ const AudioInterviewPage: React.FC = () => {
       {/* Main content */}
       {!started ? (
         finished ? (
-          /* -------- FINISHED SCREEN -------- */
+          /* -------- FINISHED SCREEN (only “View Feedback”) -------- */
           <div className="mx-auto max-w-3xl px-6 py-10">
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="text-lg font-semibold text-gray-900">Interview Summary</div>
-              <div className="mt-3 text-sm text-gray-700">Thanks! Here are the questions you answered:</div>
-              <div className="mt-4 space-y-3">
-                {history.length === 0 ? (
-                  <div className="text-sm text-gray-500">No answers recorded.</div>
-                ) : (
-                  history.map((h, i) => (
+              <div className="text-lg font-semibold text-gray-900">Interview Finished</div>
+              <div className="mt-3 text-sm text-gray-700">
+                Your responses have been recorded. Click below to view your personalized feedback.
+              </div>
+
+              {history.length === 0 ? (
+                <div className="mt-4 text-sm text-gray-500">No answers recorded.</div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {history.map((h, i) => (
                     <div key={i} className="rounded-lg border border-gray-200 p-3">
                       <div className="text-[13px] font-semibold text-gray-800">Q{i + 1}. {h.question}</div>
                       <div className="mt-1 whitespace-pre-wrap text-[13px] text-gray-700">{h.answer}</div>
                     </div>
-                  ))
-                )}
-              </div>
-
-              {finalReport && (
-                <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                  <div className="text-sm font-semibold text-emerald-900">Automated Feedback</div>
-                  <div className="mt-2 space-y-2 text-sm text-emerald-900">
-                    {finalReport.summary && <div><span className="font-medium">Summary:</span> {finalReport.summary}</div>}
-                    {"score" in finalReport && typeof finalReport.score === "number" && <div><span className="font-medium">Score:</span> {finalReport.score}</div>}
-                    {finalReport.suitability && <div><span className="font-medium">Suitability:</span> {finalReport.suitability}</div>}
-                    {Array.isArray(finalReport.strengths) && finalReport.strengths.length > 0 && (
-                      <div>
-                        <div className="font-medium">Strengths:</div>
-                        <ul className="ml-5 list-disc">{finalReport.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
-                      </div>
-                    )}
-                    {Array.isArray(finalReport.areas_to_improve) && finalReport.areas_to_improve.length > 0 && (
-                      <div>
-                        <div className="font-medium">Areas to improve:</div>
-                        <ul className="ml-5 list-disc">{finalReport.areas_to_improve.map((s, i) => <li key={i}>{s}</li>)}</ul>
-                      </div>
-                    )}
-                  </div>
+                  ))}
                 </div>
               )}
 
-              <div className="mt-6 flex gap-3">
-                <button onClick={resetAll} className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-200">Reset</button>
-                <button onClick={startInterview} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Start Again</button>
+              <div className="mt-6 flex">
+                <button
+                  onClick={goToFeedback}
+                  disabled={!finalReport}
+                  className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700 disabled:opacity-60"
+                  title={finalReport ? "Open detailed feedback" : "Feedback not available"}
+                >
+                  View Feedback
+                </button>
               </div>
             </div>
           </div>
         ) : (
           /* -------- READY SCREEN -------- */
           <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-6 py-6 md:grid-cols-2">
+            {/* Mic preview + settings */}
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="text-sm font-semibold text-gray-900">Microphone Preview</div>
               <div className="mt-4 rounded-xl border border-gray-200 bg-[#0b1320] p-6 text-center text-gray-300 place-items-center">
@@ -921,7 +891,7 @@ const AudioInterviewPage: React.FC = () => {
                 <div className="text-[13px] text-gray-300">Microphone will activate when interview starts</div>
               </div>
 
-              {/* TTS + STT Controls */}
+              {/* TTS + STT controls */}
               {!hydrated ? (
                 <div className="mt-3 h-10 w-full animate-pulse rounded-lg bg-gray-100" />
               ) : (
@@ -1008,6 +978,7 @@ const AudioInterviewPage: React.FC = () => {
               )}
             </div>
 
+            {/* Details + Start */}
             <div className="space-y-6">
               <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">Interview Details</div>
@@ -1060,10 +1031,7 @@ const AudioInterviewPage: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            <div
-              className="relative rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
-              aria-busy={isFetchingNext ? true : undefined}
-            >
+            <div className="relative rounded-2xl border border-gray-200 bg-white p-5 shadow-sm" aria-busy={isFetchingNext ? true : undefined}>
               <FetchingOverlay visible={isFetchingNext} />
 
               <div className="flex items-start justify-between">
@@ -1075,13 +1043,6 @@ const AudioInterviewPage: React.FC = () => {
                     onClick={() => { startListening(); }}
                     disabled={!hydrated || !srSupported || srListening || questionLocked || isFetchingNext}
                     className="grid h-7 place-items-center rounded-lg border border-gray-200 px-2 text-[11px] text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    title={
-                      isFetchingNext
-                        ? "Preparing your next question…"
-                        : questionLocked
-                        ? "Please listen to the question first"
-                        : (!hydrated ? "Initializing…" : srSupported ? "Start speaking" : "Not supported on this browser")
-                    }
                   >
                     Start Speaking
                   </button>
@@ -1089,7 +1050,6 @@ const AudioInterviewPage: React.FC = () => {
                     onClick={stopListening}
                     disabled={!hydrated || !srSupported || !srListening || isFetchingNext}
                     className="grid h-7 place-items-center rounded-lg border border-gray-200 px-2 text-[11px] text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    title={!hydrated ? "Initializing…" : "Stop speech capture"}
                   >
                     Stop
                   </button>
@@ -1098,7 +1058,6 @@ const AudioInterviewPage: React.FC = () => {
                     onClick={() => { if (currentQuestion) { lockAndReadQuestion(currentQuestion); } }}
                     disabled={!hydrated || !currentQuestion || isFetchingNext}
                     className="grid h-7 place-items-center rounded-lg border border-gray-200 px-2 text-[11px] text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    title={!hydrated ? "Initializing…" : "Replay question (locks answering)"}
                   >
                     <div className="flex items-center gap-1"><ReplayIcon /><span>Replay</span></div>
                   </button>
@@ -1108,8 +1067,6 @@ const AudioInterviewPage: React.FC = () => {
               <div className={`mt-4 min-h-[88px] rounded-xl border p-4 text-[14px] leading-6 text-gray-900 ${isFetchingNext ? "border-gray-200 bg-gray-50 animate-pulse" : "border-blue-200 bg-blue-50"}`}>
                 {isFetchingNext ? "Generating the next question…" : currentQuestion}
               </div>
-
-              {/* Removed tag/difficulty chips */}
 
               <div className="mt-4 relative">
                 <textarea
@@ -1125,9 +1082,7 @@ const AudioInterviewPage: React.FC = () => {
                   onChange={(e) => !(questionLocked || isFetchingNext) && setAnswer(e.target.value)}
                   readOnly={questionLocked || isFetchingNext}
                 />
-                {(questionLocked || isFetchingNext) && (
-                  <div className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-amber-200/60" />
-                )}
+                {(questionLocked || isFetchingNext) && <div className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-amber-200/60" />}
                 {!!srInterim && !(questionLocked || isFetchingNext) && (
                   <div className="mt-2 text-[12px] italic text-gray-500">
                     Live transcript: {srInterim}
@@ -1136,6 +1091,16 @@ const AudioInterviewPage: React.FC = () => {
               </div>
 
               <div className="mt-4 flex items-center gap-3">
+                {/* NEW: Skip Question button */}
+                <button
+                  onClick={skipQuestion}
+                  disabled={isFetchingNext || loading || !currentQuestion}
+                  className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                  title="Skip this question and go to the next"
+                >
+                  Skip Question
+                </button>
+
                 <button
                   onClick={submitAndNext}
                   disabled={loading || questionLocked || isFetchingNext}
@@ -1145,11 +1110,6 @@ const AudioInterviewPage: React.FC = () => {
                       ? "bg-gray-100 text-gray-500 opacity-60"
                       : "bg-gray-100 text-gray-800 hover:bg-gray-200",
                   ].join(" ")}
-                  title={
-                    isFetchingNext
-                      ? "Preparing your next question…"
-                      : (questionLocked ? "Please wait until the question finishes" : "Submit your answer and go next")
-                  }
                 >
                   {isFetchingNext ? "Fetching next…" : (loading ? "Submitting..." : "Submit & Next")}
                 </button>
