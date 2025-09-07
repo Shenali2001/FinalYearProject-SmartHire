@@ -13,7 +13,7 @@ const Footer = () => {
       <div className="flex flex-col md:flex-row">
         
         {/* Left section with logo and tagline */}
-        <div className="basis-full md:basis-1/4 bg-[#3d3d3d] lg:rounded-tr-[80px] flex justify-center md:justify-start items-center py-6 md:py-0">
+        <div className="basis-full md:basis-1/4 bg-black lg:rounded-tr-[80px] flex justify-center md:justify-start items-center py-6 md:py-0">
           <div className="mt-10 h-[150px] md:h-[200px] ml-0 md:ml-8 lg:ml-12 flex flex-col items-center md:items-start">
             <Image
               src="/images/CommonImages/logoWhite.png"
@@ -29,7 +29,7 @@ const Footer = () => {
         </div>
 
         {/* Right section with description and links */}
-        <div className="basis-full md:basis-3/4 bg-[#3d3d3d] lg:rounded-tl-[80px] flex items-center justify-center py-6 md:py-0">
+        <div className="basis-full md:basis-3/4 bg-black lg:rounded-tl-[80px] flex items-center justify-center py-6 md:py-0">
           <div className="mt-10 h-auto md:h-[200px] px-4 md:px-0 text-center md:text-left max-w-6xl">
             <h3 className="text-xl md:text-2xl font-semibold text-[#f6f6f6] mb-2">
               AI-Powered Interview Platform
