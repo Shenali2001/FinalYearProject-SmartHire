@@ -1,10 +1,6 @@
 "use client";
 import React from "react";
 
-// Save as: app/contact/page.tsx (Next.js App Router)
-// TailwindCSS required. Layout is built with <div> elements and inline SVGs.
-// Inputs/textarea are native for usability; the submit is a styled <div>.
-
 export default function ContactPage() {
   return (
     <div className="min-h-[100dvh] bg-white">

@@ -20,11 +20,11 @@ const Registration = () => {
     email: '',
     phone_number: '',
     password: '',
-    role: 'candidate', // Default role is candidate
+    role: 'candidate', 
   });
 
-  const [showModal, setShowModal] = useState(false); // For success popup
-  const [loading, setLoading] = useState(false); // Optional: For button loading state
+  const [showModal, setShowModal] = useState(false); 
+  const [loading, setLoading] = useState(false); 
   const [showPassword, setShowPassword] = useState<boolean>(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,10 +41,10 @@ const Registration = () => {
       const response = await axios.post('http://127.0.0.1:8000/register', user);
 
       if (response.status === 200 || response.status === 201) {
-        setShowModal(true); // Show success modal
+        setShowModal(true);
         setTimeout(() => {
           setShowModal(false);
-          router.push('/login'); // Navigate to login after 2s
+          router.push('/login'); 
         }, 2000);
       }
     } catch (error: any) {
@@ -97,17 +97,6 @@ const Registration = () => {
               className="w-full px-4 py-2 border rounded-xl bg-gray-200 placeholder-gray-500"
             />
           </div>
-          {/* <div>
-            <label className="block font-semibold mb-1">Password:</label>
-            <input
-              type="password"
-              name="password"
-              value={user.password}
-              onChange={handleInputChange}
-              placeholder="Password"
-              className="w-full px-4 py-2 border rounded-xl bg-gray-200 placeholder-gray-500"
-            />
-          </div> */}
           <div>
             <label className="block font-semibold mb-1">Password:</label>
             <div className="relative">
