@@ -1,9 +1,6 @@
 "use client";
 import React from "react";
 
-// Save as: app/about/page.tsx (Next.js App Router)
-// TailwindCSS required. Entire layout uses only <div> elements.
-
 export default function AboutSmartHire() {
   const cards = [
     {
