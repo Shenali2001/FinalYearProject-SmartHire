@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://127.0.0.1:3000", "http://localhost:3000", "https://your-app.com"],
+    "method": ["GET", "POST", "PUT"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]

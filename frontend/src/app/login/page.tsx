@@ -1,0 +1,148 @@
+'use client';
+import Image from 'next/image';
+import React, { useState } from 'react';
+import Link from "next/link";
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
+
+const Login = () => {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false); 
+
+  const handleLogin = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post('http://127.0.0.1:8000/login', {
+        email,
+        password,
+      });
+
+      if (response.status === 200) {
+        const { access_token, user } = response.data;
+
+        localStorage.setItem('token', access_token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        setShowModal(true);
+        setTimeout(() => {
+          setShowModal(false);
+          router.push('/'); 
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setError("Invalid email or password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-white">
+      {/* Top Left Gray Triangle */}
+      <div className="absolute bottom-0 left-0 w-0 h-0 border-l-[300px] border-l-[#454545] border-t-[300px] border-t-transparent"></div>
+
+      {/* Bottom Right Gray Triangle */}
+      <div className="absolute top-0 right-0 w-0 h-0 border-r-[300px] border-r-[#454545] border-b-[300px] border-b-transparent"></div>
+
+      {/* Login Card */}
+      <div className="z-10 w-full max-w-md bg-white shadow-2xl border border-gray-300 rounded-xl px-8 py-4 text-center">
+        <Image src="/images/CommonImages/logoBlack.png" alt='Smart-Hire' className="mx-auto mb-0 object-contain" width={150} height={150} />
+        <h2 className="text-3xl font-semibold mb-6">Login</h2>
+
+         {error && (
+          <div className="mb-4 rounded-lg bg-red-900/40 border border-red-700 p-3 text-sm text-black">{error}</div>
+        )}
+        <div className="text-left space-y-4">
+          <div>
+            <label className="block font-semibold mb-1">Your Email:</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Your Email"
+              className="w-full px-4 py-2 border rounded-xl bg-gray-200 placeholder-gray-500"
+            />
+          </div>
+         <div>
+          <label className="block font-semibold mb-1">Password:</label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full px-4 py-2 border rounded-xl bg-gray-200 placeholder-gray-500 pr-16"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-2 my-auto p-2 "
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              title={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? (
+                // Eye-off (hide)
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" strokeWidth="1.5"
+                    className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c1.61 0 3.14-.33 4.5-.93M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.5a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65M20.772 20.772L3 3m17.772 17.772l-3.65-3.65M9.88 9.88a3 3 0 004.24 4.24" />
+                </svg>
+              ) : (
+                // Eye (show)
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" strokeWidth="1.5"
+                    className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.364 4.5 12 4.5c4.636 0 8.577 3.01 9.964 7.178.07.214.07.43 0 .644C20.577 16.49 16.636 19.5 12 19.5c-4.636 0-8.577-3.01-9.964-7.178z" />
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              )}
+              <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+            </button>
+          </div>
+        </div>
+        </div>
+
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className={`mt-6 w-full bg-[#454545] text-white font-bold py-2 rounded-xl hover:bg-[#3d3d3d] transition ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
+
+        <p className='mt-3 text-left mb-5'>
+          Don't have an account?{' '}
+          <Link href="/register" className='font-bold text-[#3d3d3d]'>
+            Register
+          </Link>
+        </p>
+      </div>
+
+      {/* Success Modal */}
+      {showModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg px-12 py-10 text-center">
+            <h3 className="text-2xl font-semibold text-Black mb-2">
+              Login Successful 🎉
+            </h3>
+            <p className="text-gray-600">Redirecting to home...</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Login;
